@@ -45,6 +45,17 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name=".services.LowFlashlightTileService"
+            android:icon="@drawable/ic_qs_flashlight"
+            android:label="Low Tor"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
@@ -54,7 +55,12 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(viewModel: MainViewModel = viewModel()) {
     val hbmEnabled by viewModel.hbmState.collectAsState()
     val dcDimmingEnabled by viewModel.dcDimmingState.collectAsState()
+    val lowFlashlightEnabled by viewModel.lowFlashlightState.collectAsState()
     val hasRoot by viewModel.hasRoot.collectAsState()
+
+    val hbmStatus by viewModel.hbmStatusValue.collectAsState()
+    val dcDimmingStatus by viewModel.dcDimmingStatusValue.collectAsState()
+    val lowFlashlightStatus by viewModel.lowFlashlightStatusValue.collectAsState()
 
     Scaffold(
         topBar = {
@@ -101,6 +107,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 description = "Enable HBM for better visibility under sunlight.",
                 icon = Icons.Default.BrightnessHigh,
                 enabled = hbmEnabled,
+                statusValue = hbmStatus,
                 onToggle = { viewModel.toggleHbm(it) }
             )
 
@@ -109,7 +116,17 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 description = "Enable DC Dimming to reduce screen flicker at low brightness.",
                 icon = Icons.Default.Visibility,
                 enabled = dcDimmingEnabled,
+                statusValue = dcDimmingStatus,
                 onToggle = { viewModel.toggleDcDimming(it) }
+            )
+
+            FeatureCard(
+                title = "Low Flashlight Brightness",
+                description = "Enable low brightness mode for the flashlight.",
+                icon = Icons.Default.FlashOn,
+                enabled = lowFlashlightEnabled,
+                statusValue = lowFlashlightStatus,
+                onToggle = { viewModel.toggleLowFlashlight(it) }
             )
         }
     }
@@ -121,6 +138,7 @@ fun FeatureCard(
     description: String,
     icon: ImageVector,
     enabled: Boolean,
+    statusValue: String = "",
     onToggle: (Boolean) -> Unit
 ) {
     Card(
@@ -151,6 +169,13 @@ fun FeatureCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                if (statusValue.isNotEmpty()) {
+                    Text(
+                        text = "Current Value: $statusValue",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
             }
             Spacer(modifier = Modifier.size(8.dp))
             Switch(
@@ -160,4 +185,3 @@ fun FeatureCard(
         }
     }
 }
-

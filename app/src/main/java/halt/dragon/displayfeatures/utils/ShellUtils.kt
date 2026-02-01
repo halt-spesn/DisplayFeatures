@@ -26,58 +26,52 @@ object ShellUtils {
         var process: Process? = null
         var os: DataOutputStream? = null
         var reader: BufferedReader? = null
-        return try {
+        try {
             process = Runtime.getRuntime().exec("su")
             os = DataOutputStream(process.outputStream)
+
+            // Append a unique marker to know when the command output ends
+            val marker = "---CMD_END_MARKER---"
             os.writeBytes("$command\n")
+            os.writeBytes("echo \"$marker\"\n")
             os.writeBytes("exit\n")
             os.flush()
 
             reader = BufferedReader(InputStreamReader(process.inputStream))
             val output = StringBuilder()
             var line: String?
+
+            // Read until we find the marker or end of stream
             while (reader.readLine().also { line = it } != null) {
+                if (line!!.contains(marker)) {
+                    break
+                }
                 output.append(line).append("\n")
             }
+
             process.waitFor()
-            output.toString().trim()
+            return output.toString().trim()
         } catch (e: Exception) {
             e.printStackTrace()
-            null
+            return null
         } finally {
             try {
                 os?.close()
                 reader?.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            process?.destroy()
+                process?.destroy()
+            } catch (e: Exception) { /* ignored */ }
         }
     }
 
-    // Simpler version for single line read/write
     fun writeToFile(path: String, value: String): Boolean {
-        // Many sysfs nodes require changing permissions or careful writing.
-        // We stick to the basic echo for now.
+        // Using execRootCmd for consistency
         val cmd = "echo \"$value\" > \"$path\""
-        return try {
-            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-            process.waitFor() == 0
-        } catch (e: Exception) {
-            false
-        }
+        return execRootCmd(cmd) != null
     }
 
     fun readFromFile(path: String): String {
         val cmd = "cat \"$path\""
-        return try {
-            val process = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-            val reader = BufferedReader(InputStreamReader(process.inputStream))
-            val result = reader.readLine() // usually just one line
-            process.waitFor()
-            result ?: ""
-        } catch (e: Exception) {
-            ""
-        }
+        // Return raw result (trimmed in execRootCmd), or empty string on failure
+        return execRootCmd(cmd) ?: "Error: Read Failed"
     }
 }
