@@ -57,8 +57,4 @@ object DisplayFeatureManager {
         }
         return success
     }
-
-    fun getHbmStatus(): String = ShellUtils.readFromFile(HBM_NODE).trim()
-    fun getDcDimmingStatus(): String = ShellUtils.readFromFile(DC_DIMMING_NODE).trim()
-    fun getLowFlashlightStatus(): String = ShellUtils.readFromFile(LOW_FLASHLIGHT_NODE).trim()
 }

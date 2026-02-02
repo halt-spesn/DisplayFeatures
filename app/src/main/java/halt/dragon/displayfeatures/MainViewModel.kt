@@ -21,15 +21,6 @@ class MainViewModel : ViewModel() {
     private val _lowFlashlightState = MutableStateFlow(false)
     val lowFlashlightState: StateFlow<Boolean> = _lowFlashlightState.asStateFlow()
 
-    private val _hbmStatusValue = MutableStateFlow("")
-    val hbmStatusValue: StateFlow<String> = _hbmStatusValue.asStateFlow()
-
-    private val _dcDimmingStatusValue = MutableStateFlow("")
-    val dcDimmingStatusValue: StateFlow<String> = _dcDimmingStatusValue.asStateFlow()
-
-    private val _lowFlashlightStatusValue = MutableStateFlow("")
-    val lowFlashlightStatusValue: StateFlow<String> = _lowFlashlightStatusValue.asStateFlow()
-
     // Track if root access is granted/checked
     private val _hasRoot = MutableStateFlow(false)
     val hasRoot: StateFlow<Boolean> = _hasRoot.asStateFlow()
@@ -52,13 +43,8 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             if (_hasRoot.value) {
                 _hbmState.value = DisplayFeatureManager.isHbmEnabled()
-                _hbmStatusValue.value = DisplayFeatureManager.getHbmStatus()
-
                 _dcDimmingState.value = DisplayFeatureManager.isDcDimmingEnabled()
-                _dcDimmingStatusValue.value = DisplayFeatureManager.getDcDimmingStatus()
-
                 _lowFlashlightState.value = DisplayFeatureManager.isLowFlashlightEnabled()
-                _lowFlashlightStatusValue.value = DisplayFeatureManager.getLowFlashlightStatus()
             }
         }
     }
