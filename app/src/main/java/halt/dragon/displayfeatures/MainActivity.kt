@@ -24,12 +24,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -55,7 +59,7 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(viewModel: MainViewModel = viewModel()) {
     val hbmEnabled by viewModel.hbmState.collectAsState()
     val dcDimmingEnabled by viewModel.dcDimmingState.collectAsState()
-    val lowFlashlightEnabled by viewModel.lowFlashlightState.collectAsState()
+    val flashlightBrightness by viewModel.flashlightBrightness.collectAsState()
     val hasRoot by viewModel.hasRoot.collectAsState()
 
     Scaffold(
@@ -114,13 +118,77 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 onToggle = { viewModel.toggleDcDimming(it) }
             )
 
-            FeatureCard(
-                title = "Low Flashlight Brightness",
-                description = "Enable low brightness mode for the flashlight.",
+            FlashlightBrightnessCard(
+                title = "Flashlight Brightness",
+                description = "Adjust flashlight brightness level (0-255).",
                 icon = Icons.Default.FlashOn,
-                enabled = lowFlashlightEnabled,
-                onToggle = { viewModel.toggleLowFlashlight(it) }
+                currentValue = flashlightBrightness,
+                onValueChange = { viewModel.setFlashlightBrightness(it) }
             )
+        }
+    }
+}
+
+@Composable
+fun FlashlightBrightnessCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    currentValue: Int,
+    onValueChange: (Int) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.size(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Local state for the slider to be smooth while dragging
+            var sliderPosition by remember(currentValue) { mutableFloatStateOf(currentValue.toFloat()) }
+
+            Column {
+                Text(
+                    text = "Current Value: ${sliderPosition.toInt()}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Slider(
+                    value = sliderPosition,
+                    onValueChange = {
+                        sliderPosition = it
+                        onValueChange(it.toInt())
+                    },
+                    valueRange = 0f..255f,
+                    steps = 254
+                )
+            }
         }
     }
 }

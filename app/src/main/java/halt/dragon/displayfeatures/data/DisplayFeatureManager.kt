@@ -12,7 +12,6 @@ object DisplayFeatureManager {
     private const val ENABLE_VAL = "1"
     private const val DISABLE_VAL = "0"
 
-    private var internalLowFlashlightState = false
 
     fun isHbmEnabled(): Boolean {
         val result = ShellUtils.readFromFile(HBM_NODE)
@@ -34,27 +33,18 @@ object DisplayFeatureManager {
         return ShellUtils.writeToFile(DC_DIMMING_NODE, value)
     }
 
-    fun isLowFlashlightEnabled(): Boolean {
+    fun getFlashlightBrightness(): Int {
         val result = ShellUtils.readFromFile(LOW_FLASHLIGHT_NODE)
-        val fileState = try {
-            // Try to parse as integer, seeing if it's > 0
-            val intValue = result.trim().toInt()
-            intValue > 0
+        return try {
+            result.trim().toInt()
         } catch (e: NumberFormatException) {
-            // Fallback: literal checks
-            result.trim() == "1"
+            0
         }
-
-        return internalLowFlashlightState || fileState
     }
 
-    fun setLowFlashlight(enabled: Boolean): Boolean {
-        // If it's a brightness node, we might want '1' for low, '0' for off.
-        val value = if (enabled) "1" else "0"
-        val success = ShellUtils.writeToFile(LOW_FLASHLIGHT_NODE, value)
-        if (success) {
-            internalLowFlashlightState = enabled
-        }
-        return success
+    fun setFlashlightBrightness(value: Int): Boolean {
+        // Clamp value between 0 and 255
+        val clampedValue = value.coerceIn(0, 255)
+        return ShellUtils.writeToFile(LOW_FLASHLIGHT_NODE, clampedValue.toString())
     }
 }

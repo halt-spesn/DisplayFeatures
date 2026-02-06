@@ -18,16 +18,18 @@ class LowFlashlightTileService : TileService() {
         super.onClick()
         val isEnabled = qsTile.state == Tile.STATE_ACTIVE
 
-        // Toggle
+        // Toggle: if active, turn off (0). If inactive, turn on to low (1)
         CoroutineScope(Dispatchers.IO).launch {
-            DisplayFeatureManager.setLowFlashlight(!isEnabled)
+            val newValue = if (isEnabled) 0 else 1
+            DisplayFeatureManager.setFlashlightBrightness(newValue)
             updateTileState()
         }
     }
 
     private fun updateTileState() {
         CoroutineScope(Dispatchers.IO).launch {
-            val isEnabled = DisplayFeatureManager.isLowFlashlightEnabled()
+            val brightness = DisplayFeatureManager.getFlashlightBrightness()
+            val isEnabled = brightness > 0
             val tile = qsTile
             if (tile != null) {
                 tile.state = if (isEnabled) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE

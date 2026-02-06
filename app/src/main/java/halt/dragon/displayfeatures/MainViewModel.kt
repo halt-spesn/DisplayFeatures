@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import halt.dragon.displayfeatures.data.DisplayFeatureManager
 import halt.dragon.displayfeatures.utils.ShellUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,15 +19,18 @@ class MainViewModel : ViewModel() {
     private val _dcDimmingState = MutableStateFlow(false)
     val dcDimmingState: StateFlow<Boolean> = _dcDimmingState.asStateFlow()
 
-    private val _lowFlashlightState = MutableStateFlow(false)
-    val lowFlashlightState: StateFlow<Boolean> = _lowFlashlightState.asStateFlow()
+    private val _flashlightBrightness = MutableStateFlow(0)
+    val flashlightBrightness: StateFlow<Int> = _flashlightBrightness.asStateFlow()
 
     // Track if root access is granted/checked
     private val _hasRoot = MutableStateFlow(false)
     val hasRoot: StateFlow<Boolean> = _hasRoot.asStateFlow()
 
+    private val flashlightChannel = Channel<Int>(Channel.CONFLATED)
+
     init {
         checkRootAndRefresh()
+        processFlashlightUpdates()
     }
 
     private fun checkRootAndRefresh() {
@@ -39,12 +43,22 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    private fun processFlashlightUpdates() {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (value in flashlightChannel) {
+                if (_hasRoot.value) {
+                    DisplayFeatureManager.setFlashlightBrightness(value)
+                }
+            }
+        }
+    }
+
     fun refreshStatus() {
         viewModelScope.launch(Dispatchers.IO) {
             if (_hasRoot.value) {
                 _hbmState.value = DisplayFeatureManager.isHbmEnabled()
                 _dcDimmingState.value = DisplayFeatureManager.isDcDimmingEnabled()
-                _lowFlashlightState.value = DisplayFeatureManager.isLowFlashlightEnabled()
+                _flashlightBrightness.value = DisplayFeatureManager.getFlashlightBrightness()
             }
         }
     }
@@ -74,14 +88,11 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun toggleLowFlashlight(enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            if (_hasRoot.value) {
-                if (DisplayFeatureManager.setLowFlashlight(enabled)) {
-                    _lowFlashlightState.value = enabled
-                }
-                refreshStatus()
-            }
+    fun setFlashlightBrightness(value: Int) {
+        if (_hasRoot.value) {
+            // Optimistic update for UI responsiveness
+            _flashlightBrightness.value = value
+            flashlightChannel.trySend(value)
         }
     }
 }
